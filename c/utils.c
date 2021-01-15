@@ -23,13 +23,12 @@ int rand_range(int min, int max)
 
 void jittered_sleep()
 {
-    Dprintf("getting random numner\n");
     int i = rand_range(1, MAX_SLEEP);
-    Dprintf("sleeping for %ds\n", i);
+    Dprintf("[d] sleeping for %ds\n", i);
     sleep(i);
 }
 
-void str2hexstr(char *in, char *out)
+void str_to_hex_str(char *in, char *out)
 {
     int len = strlen(in);
 

