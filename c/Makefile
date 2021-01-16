@@ -1,7 +1,7 @@
 .PHONY: default
 
 BIN_DIR=dist
-SOURCES=$(wildcard *.c)
+SOURCES=$(wildcard src/*.c)
 WARNINGS=-Wall -Wextra -Werror
 LINKER=-lresolv
 OPTI=-Os

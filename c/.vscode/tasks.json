@@ -8,7 +8,7 @@
 			"args": [
 				"-g",
 				"-DDEBUG",
-				"${workspaceFolder}/*.c",
+				"${workspaceFolder}/src/*.c",
 				"-lresolv",	// dns resolv stuff
 				"-o",
 				"${fileDirname}/${fileBasenameNoExtension}"
