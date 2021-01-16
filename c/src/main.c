@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "options.h"
-#include "client.h"
-#include "utils.h"
+#include "lib/options.h"
+#include "lib/client.h"
+#include "lib/utils.h"
 
 // https://stackoverflow.com/a/1941331
 #ifdef DEBUG
