@@ -3,5 +3,8 @@
     to how the implant should behave
 */
 
-#define DOMAIN "c2.test"
+#ifndef DOMAIN
+    #define DOMAIN "c2.test"
+#endif
+
 #define MAX_SLEEP 2
