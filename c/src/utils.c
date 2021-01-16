@@ -28,13 +28,98 @@ void jittered_sleep()
     sleep(i);
 }
 
-void str_to_hex_str(char *in, char *out)
+int str_to_hex_str(char *in, char *out)
 {
-    int len = strlen(in);
+    int w = 0;
 
     // https://stackoverflow.com/a/46210658
+    int len = strlen(in);
+
     for (int i = 0, j = 0; i < len; ++i, j += 2)
+    {
         sprintf(out + j, "%02x", in[i] & 0xff);
+        w++;
+    }
+
+    return w;
+}
+
+int hex_str_to_char(char *in, char *out)
+{
+    int w = 0;
+    // https://stackoverflow.com/a/46210658
+    int len = strlen(in);
+
+    // for (int i=0, j=0; j<len; i+=2, j++)
+    //     out[j] = (in[i] % 32 + 9) % 25 * 16 + (in[i+1] % 32 + 9) % 25;
+
+    // return;
+
+    for (int i = 0, j = 0; j < len; ++i, j += 2)
+    {
+        int val[1];
+        sscanf(in + j, "%2x", val);
+        out[i] = val[0];
+        out[i + 1] = '\0';
+
+        w++;
+    }
+
+    return w;
+}
+
+void hex_dump(const char *desc, const void *addr, const int len)
+{
+    // https://stackoverflow.com/a/7776146
+
+    int i;
+    unsigned char buff[17];
+    const unsigned char *pc = (const unsigned char *)addr;
+
+    if (desc != NULL)
+        printf("%s:\n", desc);
+
+    if (len == 0)
+    {
+        printf("  ZERO LENGTH\n");
+        return;
+    }
+    else if (len < 0)
+    {
+        printf("  NEGATIVE LENGTH: %d\n", len);
+        return;
+    }
+
+    // Process every byte in the data.
+    for (i = 0; i < len; i++)
+    {
+        if ((i % 16) == 0)
+        {
+            if (i != 0)
+                printf("  %s\n", buff);
+
+            printf("  %04x ", i);
+        }
+
+        // Now the hex code for the specific character.
+        printf(" %02x", pc[i]);
+
+        // And buffer a printable ASCII character for later.
+        if ((pc[i] < 0x20) || (pc[i] > 0x7e)) // isprint() may be better.
+            buff[i % 16] = '.';
+        else
+            buff[i % 16] = pc[i];
+        buff[(i % 16) + 1] = '\0';
+    }
+
+    // Pad out last line if not exactly 16 characters.
+    while ((i % 16) != 0)
+    {
+        printf("   ");
+        i++;
+    }
+
+    printf("  %s\n", buff);
 }
 
 void rand_str(char *dest, size_t length)

@@ -9,7 +9,8 @@
 				"-g",
 				"-DDEBUG",
 				"${workspaceFolder}/src/*.c",
-				"-lresolv",	// dns resolv stuff
+				"-lresolv",	// libresolv
+				"-lz", // zlib
 				"-o",
 				"${fileDirname}/${fileBasenameNoExtension}"
 			],

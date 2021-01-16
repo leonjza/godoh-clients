@@ -3,14 +3,14 @@
 BIN_DIR=dist
 SOURCES=$(wildcard src/*.c)
 WARNINGS=-Wall -Wextra -Werror
-LINKER=-lresolv
+LINKER=-lresolv -lz
 OPTI=-Os
 CC=clang
 
 default: clean build
 
 clean:
-	$(RM) $(BIN_DIR)/*
+	$(RM) -rf $(BIN_DIR)/*
 
 build:
 	mkdir -p $(BIN_DIR)

