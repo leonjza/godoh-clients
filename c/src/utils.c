@@ -50,11 +50,6 @@ int hex_str_to_char(char *in, char *out)
     // https://stackoverflow.com/a/46210658
     int len = strlen(in);
 
-    // for (int i=0, j=0; j<len; i+=2, j++)
-    //     out[j] = (in[i] % 32 + 9) % 25 * 16 + (in[i+1] % 32 + 9) % 25;
-
-    // return;
-
     for (int i = 0, j = 0; j < len; ++i, j += 2)
     {
         int val[1];

