@@ -99,7 +99,7 @@ void poll(client_t *client)
         return;
 
     // first byte seems to be a size byte maybe?
-    strlcpy(txt, (char *)ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
+    strncpy(txt, (char *)ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
     // hex_dump("txt", &txt, sizeof(txt));
 
     if (strstr(txt, resp_idle) != NULL)
