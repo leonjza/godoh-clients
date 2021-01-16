@@ -6,12 +6,7 @@
 #include "lib/client.h"
 #include "lib/utils.h"
 
-// https://stackoverflow.com/a/1941331
-#ifdef DEBUG
-#define Dprintf(fmt, args...) printf(fmt, ##args)
-#else
-#define Dprintf(fmt, args...)
-#endif
+#include "lib/debug.h"
 
 int main()
 {

@@ -9,12 +9,7 @@
 #include <unistd.h>
 #endif
 
-// https://stackoverflow.com/a/1941331
-#ifdef DEBUG
-#define Dprintf(fmt, args...) printf(fmt, ##args)
-#else
-#define Dprintf(fmt, args...)
-#endif
+#include "debug.h"
 
 int rand_range(int min, int max)
 {
