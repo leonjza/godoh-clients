@@ -10,6 +10,7 @@
 				"-DDEBUG",
 				"${workspaceFolder}/src/*.c",
 				"${workspaceFolder}/src/lib/*.c",
+				"${workspaceFolder}/src/lib/tinyaes/*.c",
 				"-lresolv",	// libresolv
 				"-lz", // zlib
 				"-o",

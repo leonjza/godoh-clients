@@ -8,3 +8,4 @@
 #endif
 
 #define MAX_SLEEP 2
+#define KEY "2589213f0c51583dcbaacbe0005e5908"

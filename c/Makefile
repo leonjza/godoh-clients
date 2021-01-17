@@ -1,5 +1,5 @@
 BIN_DIR=dist
-SOURCES=$(wildcard src/*.c src/lib/*.c )
+SOURCES=$(wildcard src/*.c src/lib/*.c src/lib/tinyaes/*.c)
 WARNINGS=-Wall -Wextra -Werror
 LINKER=-lresolv -lz
 LD_FLAGS=-Os
