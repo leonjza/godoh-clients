@@ -29,4 +29,4 @@ debug:
 
 static:
 	mkdir -p $(BIN_DIR)
-	$(DEFAULT) -Os -g -DDEBUG -o $(BIN_DIR)/godoh-static -static
+	$(DEFAULT) -Os -g -o $(BIN_DIR)/godoh-static -static
