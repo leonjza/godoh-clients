@@ -2,9 +2,10 @@ BIN_DIR=dist
 SOURCES=$(wildcard src/*.c src/lib/*.c src/lib/tinyaes/*.c)
 WARNINGS=-Wall -Wextra -Werror
 LINKER=-lresolv -lz
-LD_FLAGS=-Os
 DNSDOMAIN=
 CC=clang
+
+DEFAULT=$(CC) $(SOURCES) $(WARNINGS) $(LINKER) $(DNSDOMAIN)
 
 # set the domain based on the value we get from the DOMAIN argument
 ifneq ($(DOMAIN),)
@@ -20,8 +21,12 @@ clean:
 
 build:
 	mkdir -p $(BIN_DIR)
-	$(CC) $(SOURCES) $(WARNINGS) $(LINKER) $(DNSDOMAIN) $(LD_FLAGS) -o $(BIN_DIR)/godoh
+	$(DEFAULT) -Os -o $(BIN_DIR)/godoh
 
 debug:
 	mkdir -p $(BIN_DIR)
-	$(CC) -g -DDEBUG $(SOURCES) $(WARNINGS) $(LINKER) $(DNSDOMAIN) -o $(BIN_DIR)/godoh-debug
+	$(DEFAULT) -g -DDEBUG -o $(BIN_DIR)/godoh-debug
+
+static:
+	mkdir -p $(BIN_DIR)
+	$(DEFAULT) -Os -g -DDEBUG -o $(BIN_DIR)/godoh-static -static
