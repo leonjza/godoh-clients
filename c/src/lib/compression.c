@@ -1,5 +1,5 @@
 /*
-    This file mostly from:
+    This file is mostly from:
         https://zlib.net/zpipe.c
 */
 

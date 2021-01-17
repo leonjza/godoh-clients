@@ -9,10 +9,11 @@
 				"-g",
 				"-DDEBUG",
 				"${workspaceFolder}/src/*.c",
+				"${workspaceFolder}/src/lib/*.c",
 				"-lresolv",	// libresolv
 				"-lz", // zlib
 				"-o",
-				"${fileDirname}/${fileBasenameNoExtension}"
+				"${workspaceFolder}/dist/godoh-vscode"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}"

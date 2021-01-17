@@ -8,7 +8,7 @@
             "name": "clang - Build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/dist/godoh-vscode",
             "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
