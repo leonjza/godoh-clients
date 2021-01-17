@@ -1,5 +1,5 @@
 BIN_DIR=dist
-SOURCES=$(wildcard src/*.c src/lib/*.c src/lib/tinyaes/*.c)
+SOURCES=$(wildcard src/*.c src/lib/*.c src/lib/tinyaes/*.c src/lib/parson/*.c)
 WARNINGS=-Wall -Wextra -Werror
 LINKER=-lresolv -lz
 DNSDOMAIN=

