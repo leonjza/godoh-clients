@@ -176,3 +176,14 @@ void poll(client_t *client)
         client->status = Command;
     }
 }
+
+void respond_cmd(client_t *client, char *res)
+{
+
+    if (client->status != Command)
+    {
+        Dprintf("[d] trying to respond when the client is not in Command mode");
+        return;
+    }
+
+}

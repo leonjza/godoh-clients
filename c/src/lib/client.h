@@ -20,3 +20,4 @@ typedef struct Client
 
 struct Client *init_client();
 void poll(client_t *client);
+void respond_cmd(client_t *client, char *res);
