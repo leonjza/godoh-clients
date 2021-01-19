@@ -12,6 +12,7 @@
 				"${workspaceFolder}/src/lib/*.c",
 				"${workspaceFolder}/src/lib/tinyaes/*.c",
 				"${workspaceFolder}/src/lib/parson/*.c",
+				"${workspaceFolder}/src/lib/base64/*.c",
 				"-lresolv",	// libresolv
 				"-lz", // zlib
 				"-o",

