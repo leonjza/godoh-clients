@@ -23,7 +23,7 @@ var cryptKey = "2589213f0c51583dcbaacbe0005e5908"
 // encryption
 
 // Encrypt will encrypt a byte stream
-func Encrypt(plaintext []byte) ([]byte, error) {
+func Encrypt(plaintext []byte, clientIv string) ([]byte, error) {
 	key, _ := hex.DecodeString(cryptKey)
 
 	block, err := aes.NewCipher(key)
@@ -39,9 +39,22 @@ func Encrypt(plaintext []byte) ([]byte, error) {
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
 	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+
+	// check if we have an iv to use
+	var iv []byte
+	if clientIv != "" {
+		iv, err = hex.DecodeString(clientIv)
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < aes.BlockSize; i++ {
+			ciphertext[i] = iv[i]
+		}
+	} else {
+		iv = ciphertext[:aes.BlockSize]
+		if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+			return nil, err
+		}
 	}
 
 	hx := hex.EncodeToString([]byte(key))
@@ -80,7 +93,7 @@ func ZlibWrite(w io.Writer, data []byte) error {
 	return err
 }
 
-func doencrypt() {
+func doencrypt(iv string) {
 	fmt.Println(" i were going to encrypt -> compress input you provide")
 
 	data, err := inputReader()
@@ -95,7 +108,7 @@ func doencrypt() {
 
 	// encrypt
 	// Encrypt the data
-	enc, err := Encrypt([]byte(data))
+	enc, err := Encrypt([]byte(data), iv)
 	if err != nil {
 		fmt.Printf("! error encrypting input: %s\n", err)
 		return
@@ -269,6 +282,7 @@ func main() {
 
 	encPtr := flag.Bool("encrypt", false, "perform encryption on an input")
 	decPtr := flag.Bool("decrypt", false, "perform decryption on an input")
+	ivPtr := flag.String("iv", "", "a hex encoded iv to use instead of a random one")
 	flag.Parse()
 
 	if *encPtr && *decPtr {
@@ -282,7 +296,7 @@ func main() {
 	}
 
 	if *encPtr {
-		doencrypt()
+		doencrypt(*ivPtr)
 	}
 
 	if *decPtr {
