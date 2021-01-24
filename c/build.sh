@@ -2,6 +2,8 @@
 
 set -e
 
+CC=clang
+
 if ! [[ "$1" =~ ^(debug|release)$ ]]; then
     echo "Usage: $0 [build type] <domain>"
     echo " eg: $0 release c2.local"
