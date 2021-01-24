@@ -3,8 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"compress/flate"
-	"compress/zlib"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -13,7 +11,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -31,10 +28,16 @@ func Encrypt(plaintext []byte, clientIv string) ([]byte, error) {
 		panic(err)
 	}
 
+	hx := hex.EncodeToString(plaintext)
+	fmt.Printf(" i (plaintext prepad):	%s\n", hx)
+
 	plaintext, err = pkcs7pad(plaintext, aes.BlockSize) // BlockSize = 16
 	if err != nil {
 		return nil, err
 	}
+
+	hx = hex.EncodeToString(plaintext)
+	fmt.Printf(" i (plaintext postpad):	%s\n", hx)
 
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
@@ -57,12 +60,10 @@ func Encrypt(plaintext []byte, clientIv string) ([]byte, error) {
 		}
 	}
 
-	hx := hex.EncodeToString([]byte(key))
+	hx = hex.EncodeToString([]byte(key))
 	fmt.Printf(" i (encryption key):	%s\n", hx)
 	hx = hex.EncodeToString([]byte(iv))
 	fmt.Printf(" i (encryption iv):	%s\n", hx)
-	hx = hex.EncodeToString(plaintext)
-	fmt.Printf(" i (padded plaintext):	%s\n", hx)
 
 	stream := cipher.NewCBCEncrypter(block, iv)
 	stream.CryptBlocks(ciphertext[aes.BlockSize:], plaintext)
@@ -82,15 +83,6 @@ func pkcs7pad(data []byte, blockSize int) ([]byte, error) {
 	padding := bytes.Repeat([]byte{byte(padLen)}, padLen)
 
 	return append(data, padding...), nil
-}
-
-// ZlibWrite data to a Writer
-func ZlibWrite(w io.Writer, data []byte) error {
-	wr, err := zlib.NewWriterLevel(w, flate.BestCompression)
-	defer wr.Close()
-	wr.Write(data)
-
-	return err
 }
 
 func doencrypt(iv string) {
@@ -115,31 +107,9 @@ func doencrypt(iv string) {
 	}
 	hx = hex.EncodeToString(enc)
 	fmt.Printf(" i (input encrypted):	%s\n", hx)
-
-	// deflate
-	var deflated bytes.Buffer
-	ZlibWrite(&deflated, enc)
-	hx = hex.EncodeToString(deflated.Bytes())
-	fmt.Printf(" i (input defalted): 	%s\n", hx)
 }
 
 // decryption
-
-// UnzlibWrite data to a Writer
-func UnzlibWrite(w io.Writer, data []byte) error {
-	zr, err := zlib.NewReader(bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-
-	data, err = ioutil.ReadAll(zr)
-	if err != nil {
-		return err
-	}
-	w.Write(data)
-
-	return nil
-}
 
 // Decrypt will decrypt a byte stream
 func Decrypt(ciphertext []byte) ([]byte, error) {
@@ -219,7 +189,7 @@ func dodecrypt() {
 	// decode
 	dataBytes, err := hex.DecodeString(data)
 	fmt.Printf(" i input len as str: %d\n", len(data))
-	fmt.Printf(" i input len as hex: %d\n", len(dataBytes))
+	fmt.Printf(" i input len as bin: %d\n", len(dataBytes))
 
 	if len(dataBytes) == 0 {
 		fmt.Println(" ! decoding input hex string to bytes failed")
@@ -233,20 +203,14 @@ func dodecrypt() {
 		return
 	}
 
-	// decompress
-	inflated := bytes.Buffer{}
-	UnzlibWrite(&inflated, dataBytes)
-	hx := hex.EncodeToString(inflated.Bytes())
-	fmt.Printf(" i (input inflated):	%s\n", hx)
-
 	// decrypt
-	decryptData, err := Decrypt(inflated.Bytes())
+	decryptData, err := Decrypt(dataBytes)
 	if err != nil {
 		fmt.Printf(" ! error decrypting input: %s\n", err)
 		return
 	}
 
-	hx = hex.EncodeToString(decryptData)
+	hx := hex.EncodeToString(decryptData)
 	fmt.Printf(" i (input decrypted):	%s\n", hx)
 	fmt.Printf(" i (input ascii):	%s\n", string(decryptData))
 
