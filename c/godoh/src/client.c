@@ -384,7 +384,7 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
                  (u_int8_t) seq,        // seq
                  crc,                   // crc32
                  command_protocol,      // proto
-                 3,                     // datalen
+                 data_parts,            // datalen
                  data_parts_str);       // data
         strncpy(requests[seq], request, max_label);
 
