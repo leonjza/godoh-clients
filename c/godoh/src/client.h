@@ -21,8 +21,6 @@ typedef struct Client {
 
 struct Client *init_client();
 
-void reset_command(client_t *client);
-
 int send_response(client_t *client, char **data, int data_count);
 
 int poll(client_t *client);

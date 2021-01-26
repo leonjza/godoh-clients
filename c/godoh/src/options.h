@@ -7,7 +7,7 @@
 */
 
 #ifndef DOMAIN
-    #define DOMAIN "c2.test"
+#define DOMAIN "c2.test"
 #endif
 
 #define MAX_SLEEP 2
