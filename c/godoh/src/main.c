@@ -50,7 +50,6 @@ void implant() {
                 break;
         }
 
-        Dprintf("[d] client status is: %d\n", client->status);
         jitter_sleep();
     }
 }
