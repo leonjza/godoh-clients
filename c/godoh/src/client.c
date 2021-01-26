@@ -81,9 +81,8 @@ char *request_hex_to_string(const char *in) {
  */
 char *str_to_response_bytes(client_t *client, char *res, int *res_length) {
 
-    if (client->status != Command) {
-        Dprintf("[d] trying to respond when the client is not in Command mode");
-        return NULL;
+    if (strlen(res) == 0) {
+        res = "(empty)";
     }
 
     // base64 res bytes
