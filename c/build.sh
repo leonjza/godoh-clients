@@ -2,7 +2,7 @@
 
 set -e
 
-CC=clang
+export CC=clang
 
 if ! [[ "$1" =~ ^(debug|release)$ ]]; then
     echo "Usage: $0 [build type] <domain>"
