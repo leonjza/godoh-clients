@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <time.h>
-#include <signal.h>
 
 #include "util/debug.h"
 #include "client.h"
