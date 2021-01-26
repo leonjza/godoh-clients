@@ -10,11 +10,11 @@ typedef enum {
 typedef struct Client {
     char *domain;
 
-    char agent_id[6];
-    char agent_id_hex[6 * 2 + 1];
+    char *agent_id;
+    char *agent_id_hex;
     char checkin_domain[256];
 
-    char command[255];
+    char *command;
 
     status_t status;
 } client_t;

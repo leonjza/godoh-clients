@@ -33,17 +33,8 @@ void json_serialize_cmd_response(char *cmd, char *res, char *out) {
 
     json_object_set_string(root_object, "exec", cmd);
     json_object_set_string(root_object, "data", res);
-
-//    char t_buff[20];
-//    time_t now = time(NULL);
-    // 2021-01-23T20:57:03.400992+02:00 <-- golang fmt TODO: Fix
-//    strftime(t_buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-//    strftime(t_buff, 20, "%FT%T%z", localtime(&now));
     json_object_set_number(root_object, "exectime", time(NULL));
-
-    char id[5] = {0};
-    rand_str(id, 4);
-    json_object_set_string(root_object, "identifier", id);
+    json_object_set_string(root_object, "identifier", rand_str(4));
 
     char *serialized_string = NULL;
     serialized_string = json_serialize_to_string(root_value);

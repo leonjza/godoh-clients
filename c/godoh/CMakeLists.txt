@@ -4,6 +4,8 @@ project(godoh C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS_RELEASE_INIT "-Wall -Wextra")
 set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Wall -Wextra")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -g")
+
 
 option(DEBUG "enable debug mode." OFF)
 if (DEBUG)

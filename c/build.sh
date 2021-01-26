@@ -17,6 +17,7 @@ if [ -z "$2" ]; then
     exit 1
 fi
 
+rm -Rf build
 mkdir -p build
 cd build/
 
@@ -32,6 +33,6 @@ case $1 in
 esac
 
 cmake --build .
-cd -
-cp build/godoh godoh-$1
-rm -Rf build
+cd - > /dev/null
+echo -n "binary should be in build dir: "
+ls -l build/godoh

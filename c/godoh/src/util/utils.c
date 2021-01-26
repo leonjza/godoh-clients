@@ -19,7 +19,7 @@ int rand_range(int min, int max) {
     return (rand() % (max - min + 1)) + min;
 }
 
-void jittered_sleep() {
+void jitter_sleep() {
     int i = rand_range(1, MAX_SLEEP);
     Dprintf("[d] sleeping for %ds\n", i);
     sleep(i);
@@ -112,7 +112,10 @@ void hex_str_dump(const void *addr, const int len) {
     printf("\n");
 }
 
-void rand_str(char *dest, size_t length) {
+char *rand_str(size_t length) {
+
+    char *out = calloc(length + 1, sizeof(char *));
+
     // https://stackoverflow.com/a/15768317
     char charset[] = "0123456789"
                      "abcdefghijklmnopqrstuvwxyz"
@@ -120,9 +123,9 @@ void rand_str(char *dest, size_t length) {
 
     while (length-- > 0) {
         size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
-        *dest++ = charset[index];
+        out[length] = charset[index];
     }
 
-    *dest = '\0';
+    return out;
 }
 
