@@ -4,12 +4,14 @@
 
 #include "util/debug.h"
 #include "client.h"
+#include "options.h"
 #include "util/utils.h"
 
 void implant() {
 
     struct Client *client = init_client();
     Dprintf("[d] booting agent for %s\n", client->domain);
+    Dprintf("[d] agent jitter is: %d\n", MAX_SLEEP);
 
     while (poll(client)) {
 

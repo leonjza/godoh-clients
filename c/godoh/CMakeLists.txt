@@ -29,3 +29,7 @@ if (DOMAIN)
 else ()
     add_compile_definitions(godoh PRIVATE "DOMAIN=\"c2.test\"")
 endif ()
+
+if (MAX_SLEEP)
+    add_compile_definitions(godoh PRIVATE "MAX_SLEEP=${MAX_SLEEP}")
+endif ()
