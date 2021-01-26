@@ -21,9 +21,10 @@ int rand_range(int min, int max) {
 
 void jitter_sleep() {
     int i = rand_range(1, MAX_SLEEP);
-    Dprintf("[d] sleeping for %ds\n", i);
     sleep(i);
 }
+
+#ifdef DEBUG
 
 void hex_dump(const char *desc, const void *addr, const int len) {
     // https://stackoverflow.com/a/7776146
@@ -72,6 +73,20 @@ void hex_dump(const char *desc, const void *addr, const int len) {
     printf("  %s\n", buff);
 }
 
+void hex_str_dump(const void *addr, const int len) {
+
+    const unsigned char *pc = (const unsigned char *) addr;
+
+    printf("hex str | ");
+    for (int i = 0; i < len; i++) {
+        printf("%02x", pc[i]);
+    }
+    printf("\n");
+}
+
+
+#endif
+
 char *bin_str_to_hex_str(const char *in, int in_len) {
     char *out = calloc(in_len, sizeof(char *));
 
@@ -101,16 +116,7 @@ char *hex_str_to_bin_char(const char *in, int *res_len) {
     return out;
 }
 
-void hex_str_dump(const void *addr, const int len) {
 
-    const unsigned char *pc = (const unsigned char *) addr;
-
-    printf("hex str | ");
-    for (int i = 0; i < len; i++) {
-        printf("%02x", pc[i]);
-    }
-    printf("\n");
-}
 
 char *rand_str(size_t length) {
 

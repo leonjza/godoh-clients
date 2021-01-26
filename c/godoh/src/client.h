@@ -25,7 +25,7 @@ void reset_command(client_t *client);
 
 int send_response(client_t *client, char **data, int data_count);
 
-void poll(client_t *client);
+int poll(client_t *client);
 
 char *shell_exec_output(const char *cmd);
 
