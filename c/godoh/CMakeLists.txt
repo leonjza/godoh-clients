@@ -4,7 +4,6 @@ project(godoh C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS_RELEASE_INIT "-Wall -Wextra")
 set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Wall -Wextra")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -g")
 
 
@@ -32,4 +31,9 @@ endif ()
 
 if (MAX_SLEEP)
     add_compile_definitions(godoh PRIVATE "MAX_SLEEP=${MAX_SLEEP}")
+endif ()
+
+if (CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_STRIP} ${PROJECT_NAME})
 endif ()
