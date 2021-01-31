@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.10)
 project(godoh C)
 
 set(CMAKE_C_STANDARD 99)
@@ -24,13 +24,13 @@ target_link_libraries(godoh z)
 target_link_libraries(godoh resolv)
 
 if (DOMAIN)
-    add_compile_definitions(godoh PRIVATE "DOMAIN=\"${DOMAIN}\"")
+    add_definitions(-DDOMAIN="${DOMAIN}")
 else ()
-    add_compile_definitions(godoh PRIVATE "DOMAIN=\"c2.test\"")
+    add_definitions(-DDOMAIN="c2.test")
 endif ()
 
 if (MAX_SLEEP)
-    add_compile_definitions(godoh PRIVATE "MAX_SLEEP=${MAX_SLEEP}")
+    add_definitions(-DMAX_SLEEP=${MAX_SLEEP})
 endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
