@@ -294,14 +294,14 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
     // ident.type.seq.crc32.proto.datalen.data.data.data
     char init[max_label + 1];
     snprintf(init, max_label,
-             "%02hhx%02hhx.%02x.%d.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
-             ident[0], ident[1],                                // ident
-             stream_start,                                      // type
-             seq,                                               // seq
-             (u_int8_t) 0x00,                                   // crc32
-             command_protocol,                                  // proto
-             (u_int8_t) 0,                                      // datalen
-             (u_int8_t) 0x00, (u_int8_t) 0x00, (u_int8_t) 0x00);// data
+             "%02hhx%02hhx.%02x.%d.%02x.%02hhx.%x.%02x.%02x.%02x",
+             ident[0], ident[1],// ident
+             stream_start,      // type
+             seq,               // seq
+             0x00,              // crc32
+             command_protocol,  // proto
+             0,                 // datalen
+             0x00, 0x00, 0x00); // data
     strncpy(requests[seq], init, max_label);
 
     // placeholder to know how much data we have encoded so far
@@ -394,14 +394,14 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
     // fin request
     char final[max_label + 1];
     snprintf(final, max_label,
-             "%02hhx%02hhx.%02x.%d.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
-             ident[0], ident[1],                                // ident
-             stream_end,                                        // type
-             seq,                                               // seq
-             (u_int8_t) 0x00,                                   // crc32
-             command_protocol,                                  // proto
-             (u_int8_t) 0,                                      // datalen
-             (u_int8_t) 0x00, (u_int8_t) 0x00, (u_int8_t) 0x00); // data
+             "%02hhx%02hhx.%02x.%d.%02x.%02hhx.%x.%02x.%02x.%02x",
+             ident[0], ident[1],// ident
+             stream_end,        // type
+             seq,               // seq
+             0x00,              // crc32
+             command_protocol,  // proto
+             0,                 // datalen
+             0x00, 0x00, 0x00); // data
     strncpy(requests[seq], final, max_label);
 
     return requests;
