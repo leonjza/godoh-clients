@@ -4,16 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../options.h"
-
-#ifdef _WIN32
-#include <Windows.h>
-#else
-
 #include <unistd.h>
-
-#endif
-
-#include "debug.h"
 
 int rand_range(int min, int max) {
     return (rand() % (max - min + 1)) + min;

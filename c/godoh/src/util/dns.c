@@ -6,7 +6,78 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#include <windows.h>  //windows
+#include <windns.h>   //DNS api's
+#include <stdio.h>    //standard i/o
+#include <winsock.h>  //winsock
+#endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+
+// basically:
+//  https://github.com/microsoft/Windows-classic-samples/blob/master/Samples/Win7Samples/netds/dns/dnsquery/DNSQuery.Cpp
+
+char *dns_raw_txt_lookup(const char *domain) {
+
+    DNS_STATUS status;               // return value of  DnsQuery_A() function.
+    PDNS_RECORD pDnsRecord;          //pointer to DNS_RECORD structure
+    LPTSTR pOwnerName = NULL;        //owner name to be queried
+    DNS_FREE_TYPE freetype;
+    freetype =  DnsFreeRecordListDeep;
+    IN_ADDR ipaddr;
+
+    pOwnerName = (char *)domain;
+
+    status = DnsQuery_A(pOwnerName, DNS_TYPE_TEXT, DNS_QUERY_BYPASS_CACHE, NULL, &pDnsRecord, NULL);
+
+    if (status) {
+        Dprintf("[d] failed to query record %s\n", domain);
+        return NULL;
+    }
+
+    if(pDnsRecord->Data.TXT.dwStringCount < 1) {
+        return NULL;
+    }
+
+    // we only care about the first response
+    char *txt = calloc(255, sizeof(char *));
+    strncpy(txt, pDnsRecord->Data.TXT.pStringArray[0], strlen(pDnsRecord->Data.TXT.pStringArray[0]));
+
+    Dprintf("[d] txt response has %lu records\n", pDnsRecord->Data.TXT.dwStringCount);
+
+    return txt;
+}
+
+char *dns_raw_a_lookup(const char *domain) {
+
+    DNS_STATUS status;               // return value of  DnsQuery_A() function.
+    PDNS_RECORD pDnsRecord;          //pointer to DNS_RECORD structure
+    LPTSTR pOwnerName = NULL;        //owner name to be queried
+    DNS_FREE_TYPE freetype;
+    freetype =  DnsFreeRecordListDeep;
+    IN_ADDR ipaddr;
+
+    pOwnerName = (char *)domain;
+
+    status = DnsQuery_A(pOwnerName, DNS_TYPE_A, DNS_QUERY_BYPASS_CACHE, NULL, &pDnsRecord, NULL);
+
+    if (status) {
+        Dprintf("[d] failed to query record %s\n", domain);
+        return NULL;
+    }
+
+    ipaddr.S_un.S_addr = (pDnsRecord->Data.A.IpAddress);
+
+    int ip_len = strlen(inet_ntoa(ipaddr));
+    char *res = calloc(ip_len, sizeof (char *));
+    strncpy(res, inet_ntoa(ipaddr), ip_len);
+
+    DnsRecordListFree(pDnsRecord, freetype);
+
+    return res;
+}
+
 #else
 
 #include <resolv.h>
