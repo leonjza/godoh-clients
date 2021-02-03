@@ -4,7 +4,9 @@ project(godoh C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS_RELEASE_INIT "-Wall -Wextra")
 set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Wall -Wextra")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -g")
+if (NOT WIN32)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -g")
+endif ()
 
 
 option(DEBUG "enable debug mode." OFF)
@@ -20,8 +22,14 @@ file(GLOB_RECURSE SOURCES RELATIVE
 
 add_executable(godoh ${SOURCES})
 
-target_link_libraries(godoh z)
-target_link_libraries(godoh resolv)
+if (WIN32)
+    target_link_libraries(godoh dnsapi.dll)
+    target_link_libraries(godoh ws2_32)
+ELSE ()
+    target_link_libraries(godoh z)
+    target_link_libraries(godoh resolv)
+ENDIF ()
+
 
 if (DOMAIN)
     add_definitions(-DDOMAIN="${DOMAIN}")
